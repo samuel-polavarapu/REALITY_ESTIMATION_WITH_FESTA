@@ -1,0 +1,225 @@
+# FESTA Image Generation & Evaluation Configuration
+# Based on FESTA paper recommendations
+
+# Generation Parameters
+generation:
+  # Number of samples
+  num_samples: 143
+
+  # FES (Functional Equivalent Samples) - Should preserve semantics but add difficulty
+  fes:
+    text_samples: 5
+    image_samples: 5
+
+    # Image perturbation strategy
+    perturbations:
+      - type: "grayscale"
+        enabled: true
+        params: {}
+
+      - type: "blur"
+        enabled: true
+        params:
+          radius: [2, 4]  # Range for Gaussian blur
+
+      - type: "noise"
+        enabled: true
+        params:
+          amount: [0.05, 0.15]  # Gaussian noise stddev
+
+      - type: "brightness"
+        enabled: true
+        params:
+          factor: [0.7, 1.3]
+
+      - type: "contrast"
+        enabled: true
+        params:
+          factor: [0.6, 1.2]
+
+      - type: "rotation"
+        enabled: true
+        params:
+          degrees: [-15, 15]  # Small rotations
+
+      - type: "crop"
+        enabled: true
+        params:
+          ratio: [0.7, 0.9]  # Crop to this fraction
+
+      - type: "occlusion"
+        enabled: true
+        params:
+          patches: [1, 3]  # Number of occluding patches
+          size: [0.1, 0.2]  # Fraction of image
+
+      - type: "color_shift"
+        enabled: true
+        params:
+          hue_shift: [-30, 30]
+          saturation_shift: [0.8, 1.2]
+
+    # Quality constraints
+    min_resolution: [512, 512]
+    preserve_aspect_ratio: true
+    output_format: "PNG"
+    compression_quality: 95
+
+  # FCS (Functional Counterfactual Samples) - Should flip semantics
+  fcs:
+    text_samples: 5
+    image_samples: 3
+
+    # FCS Text Generation Prompt
+    # This prompt instructs the LLM to reverse spatial relationships without using negation
+    prompt_template: |
+      Rephrase the following question so that the spatial relationship is reversed, 
+      but the task remains the same. Do not use explicit negation words like 'not'. 
+      Return only the rephrased question, with no extra text or instructions.
+      
+      USER: {original_question}
+
+    # Spatial transformation strategy
+    transformations:
+      - type: "mirror"  # Horizontal flip
+        enabled: true
+        condition: "left|right"  # Apply when question contains these terms
+
+      - type: "flip"  # Vertical flip
+        enabled: true
+        condition: "above|below|top|under"
+
+      - type: "rotate_180"
+        enabled: true
+        condition: "front|behind"
+
+      - type: "transpose"  # Swap axes
+        enabled: false
+
+    # Quality constraints
+    min_resolution: [512, 512]
+    preserve_aspect_ratio: true
+    output_format: "PNG"
+    compression_quality: 95
+
+# Image Quality Requirements (from FESTA paper)
+quality:
+  # Resolution
+  min_resolution: [512, 512]
+  preferred_resolution: [1024, 1024]
+
+  # Technical quality
+  min_sharpness: 0.3
+  min_contrast: 0.25
+  max_compression_artifacts: 0.1
+  max_watermark_rate: 0.05
+  min_technical_score: 0.7
+
+  # Diversity requirements
+  min_intra_set_distance: 0.25  # CLIP embedding distance
+  max_near_duplicates: 0.05
+  min_diversity_score: 0.3
+
+  # Distribution requirements
+  max_class_imbalance: 0.3
+  min_topic_coverage: 0.8
+
+  # NSFW and safety
+  nsfw_threshold: 0.1
+  check_for_watermarks: true
+
+# Evaluation Parameters
+evaluation:
+  # Model settings
+  model_id: "llava-hf/llava-v1.6-mistral-7b-hf"
+  paraphraser_id: "meta-llama/Meta-Llama-3.1-8B-Instruct"
+
+  # Inference settings
+  temperature: 0.9
+  top_p: 0.95
+  top_k: 50
+  num_inference_samples: 16  # Monte Carlo samples
+  max_new_tokens: 32
+
+  # Quantization
+  use_4bit: true
+  use_mixed_precision: true
+
+  # AUROC target (from FESTA paper)
+  target_auroc: 0.75  # Target from paper
+  auroc_tolerance: 0.10  # Accept within 10% of target
+  min_auroc: 0.65  # Minimum acceptable
+
+  # Calibration
+  num_bins_ece: 15
+  abstention_step: 0.05
+
+# Dataset
+dataset:
+  name: "BLINK-Benchmark/BLINK"
+  subset: "Spatial_Relation"
+  split: "val"
+
+# Output paths
+paths:
+  output_dir: "output"
+  fcs_images_dir: "output/images/fcs"
+  fes_images_dir: "output/images/fes"
+  text_output_dir: "output/text"
+  logs_dir: "output/logs"
+  models_cache_dir: "output/models"
+  audit_dir: "output/audit"
+  artifacts_dir: "output/artifacts"
+
+# Reproducibility
+reproducibility:
+  seed: 42
+  deterministic: true
+  log_versions: true
+  save_config: true
+
+# Iteration settings
+iteration:
+  max_iterations: 2
+  improvement_threshold: 0.05  # Minimum AUROC improvement to continue
+  highest_impact_params: 2  # Number of parameters to adjust per iteration
+
+# Metrics to track
+metrics:
+  track:
+    - "auroc_overall"
+    - "auroc_fcs"
+    - "auroc_fes"
+    - "accuracy"
+    - "ece"
+    - "brier_score"
+    - "diversity_score"
+    - "technical_quality"
+    - "adherence_rate"
+
+  report:
+    - "confusion_matrix"
+    - "calibration_plot"
+    - "risk_coverage_curve"
+    - "error_analysis"
+
+# CLIP settings (for semantic similarity)
+clip:
+  model: "ViT-B/32"
+  enabled: true
+  batch_size: 32
+
+# FID/KID settings (if reference images available)
+fid_kid:
+  enabled: false
+  reference_images_dir: "reference_real_images"
+  num_samples: 1000
+  batch_size: 50
+
+# Audit settings
+audit:
+  generate_thumbnails: true
+  num_example_images: 10
+  save_per_image_metrics: true
+  create_comparison_plots: true
+

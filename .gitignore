@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Model caches
+models/
+.cache/
+
+# HuggingFace
+transformers_cache/
+
+# Logs
+*.log
+logs/*.log
+
+# Output files
+output/
+reports/*.json
+reports/*.html
+
+# Data
+data/
+datasets/
+
+# macOS
+.DS_Store
+
+# API keys (important!)
+*api_key*
+*API_KEY*
+
+# Large model files
+*.bin
+*.ckpt
+*.pth
+*.safetensors
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+

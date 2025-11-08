@@ -1,0 +1,326 @@
+================================================================================
+FESTA PROJECT - FILE AND FOLDER DEPENDENCY DIAGRAM
+================================================================================
+Date: October 26, 2025
+
+PROJECT ROOT: /data/sam/Kaggle/code/LLAVA-V5-2/
+│
+├─── CONFIGURATION FILES
+│    ├── .env                          [Runtime secrets - API keys]
+│    ├── .env.example                  [Template for environment variables]
+│    └── requirements.txt              [Python dependencies]
+│
+├─── CONFIG/                           [Configuration Directory]
+│    └── config.yaml                   [FESTA runtime parameters]
+│
+├─── SRC/                              [Source Code - Runtime Python Modules]
+│    ├── __init__.py                   [Package initialization]
+│    │
+│    ├── festa_with_apis.py            [MAIN ENTRY POINT]
+│    │    │
+│    │    ├──imports──> festa_evaluation.py (Config, LLaVAModel)
+│    │    ├──imports──> complement_generator.py (ComplementGenerator)
+│    │    ├──uses────> .env (API keys via dotenv)
+│    │    ├──loads───> BLINK dataset (HuggingFace)
+│    │    └──outputs─> output/api_run/
+│    │
+│    ├── festa_evaluation.py           [Core Evaluation Module]
+│    │    │
+│    │    ├──provides─> Config class
+│    │    ├──provides─> LLaVAModel class
+│    │    ├──loads───> config.yaml (optional)
+│    │    ├──loads───> LLaVA model from HuggingFace
+│    │    ├──uses────> torch, transformers, PIL
+│    │    └──uses────> CUDA/GPU for inference
+│    │
+│    ├── complement_generator.py       [Complement Generation System]
+│    │    │
+│    │    ├──imports──> prompts_text.py (prompt functions)
+│    │    ├──imports──> prompts_image.py (prompt functions)
+│    │    ├──provides─> ComplementGenerator class
+│    │    ├──provides─> SpatialRelationMapper class
+│    │    ├──uses────> OpenAI API (text transformations)
+│    │    ├──uses────> Google Gemini API (image analysis)
+│    │    ├──uses────> PIL (local image transformations)
+│    │    └──outputs─> generated samples to output/
+│    │
+│    ├── prompts_text.py                [Text Prompt Templates]
+│    │    │
+│    │    ├──provides─> get_fes_text_prompt()
+│    │    ├──provides─> get_fcs_text_prompt()
+│    │    ├──provides─> get_mcq_transform_prompt()
+│    │    └──contains─> FES/FCS system & user prompts
+│    │
+│    └── prompts_image.py               [Image Prompt Templates]
+│         │
+│         ├──provides─> get_fes_image_prompt()
+│         ├──provides─> get_fcs_image_prompt()
+│         ├──provides─> get_image_analysis_prompt()
+│         └──contains─> FES/FCS image transformation specs
+│
+├─── PAPER/                             [Scientific Reference]
+│    └── 2509.16648v1.pdf              [FESTA framework paper]
+│
+├─── OUTPUT/                            [Runtime Generated Artifacts]
+│    └── api_run/                      [Execution results directory]
+│         ├── api_evaluation_results.json
+│         ├── api_evaluation_report.md
+│         ├── festa_*.log              [Execution logs]
+│         └── generated_samples/       [Generated FES/FCS samples]
+│              ├── sample_N_original.png
+│              ├── sample_N_fes_text_*.json
+│              ├── sample_N_fcs_text_*.json
+│              ├── sample_N_fes_image_*.png
+│              └── sample_N_fcs_image_*.png
+│
+└─── .venv/                             [Virtual Environment]
+     └── [Python packages from requirements.txt]
+
+
+================================================================================
+DEPENDENCY GRAPH
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         EXECUTION FLOW                                   │
+└─────────────────────────────────────────────────────────────────────────┘
+
+    [USER COMMAND]
+         ↓
+    python3 -m src.festa_with_apis
+         ↓
+    ┌─────────────────────────────────┐
+    │   src/festa_with_apis.py        │ ← ENTRY POINT
+    │   (Main orchestration)          │
+    └─────────────────────────────────┘
+         │
+         ├──→ Loads .env (API keys)
+         │
+         ├──→ Initializes ComplementGenerator
+         │         ↓
+         │    ┌───────────────────────────────┐
+         │    │ src/complement_generator.py   │
+         │    └───────────────────────────────┘
+         │         │
+         │         ├──→ src/prompts_text.py
+         │         │     ├─ FES text prompts
+         │         │     └─ FCS text prompts
+         │         │
+         │         ├──→ src/prompts_image.py
+         │         │     ├─ FES image prompts
+         │         │     └─ FCS image prompts
+         │         │
+         │         ├──→ OpenAI API (text)
+         │         ├──→ Google Gemini API (image analysis)
+         │         └──→ PIL (local transformations)
+         │
+         ├──→ Initializes LLaVAModel
+         │         ↓
+         │    ┌───────────────────────────────┐
+         │    │  src/festa_evaluation.py      │
+         │    │  (Config + LLaVAModel)        │
+         │    └───────────────────────────────┘
+         │         │
+         │         ├──→ config/config.yaml (optional)
+         │         ├──→ HuggingFace Hub (model download)
+         │         ├──→ torch + transformers
+         │         └──→ CUDA/GPU
+         │
+         ├──→ Loads BLINK dataset
+         │         ↓
+         │    [HuggingFace datasets API]
+         │         ↓
+         │    BLINK-Benchmark/BLINK
+         │    (Spatial_Relation subset)
+         │
+         ├──→ Process samples
+         │    │
+         │    ├─ For each sample:
+         │    │   ├─ Generate FES text (4 variants)
+         │    │   ├─ Generate FCS text (4 variants)
+         │    │   ├─ Generate FES images (4 variants)
+         │    │   ├─ Generate FCS images (4 variants)
+         │    │   └─ Run LLaVA inference on all variants
+         │    │
+         │    └─ Compute metrics (accuracy, AUROC)
+         │
+         └──→ Save results to output/api_run/
+
+
+================================================================================
+MODULE IMPORT HIERARCHY
+================================================================================
+
+src.festa_with_apis                     [Level 1 - Entry Point]
+    ├── src.festa_evaluation
+    │   ├── Config                      [Configuration class]
+    │   └── LLaVAModel                  [Model wrapper class]
+    │
+    └── src.complement_generator
+        ├── ComplementGenerator         [Main generator class]
+        ├── SpatialRelationMapper       [Relation mapping utility]
+        │
+        ├── src.prompts_text
+        │   ├── get_fes_text_prompt     [Function]
+        │   ├── get_fcs_text_prompt     [Function]
+        │   └── get_mcq_transform_prompt [Function]
+        │
+        └── src.prompts_image
+            ├── get_fes_image_prompt    [Function]
+            ├── get_fcs_image_prompt    [Function]
+            └── get_image_analysis_prompt [Function]
+
+
+================================================================================
+EXTERNAL DEPENDENCIES (from requirements.txt)
+================================================================================
+
+CATEGORY: Deep Learning
+    ├── torch>=2.0.0                    [PyTorch - GPU computation]
+    ├── torchvision>=0.15.0             [Vision utilities]
+    ├── transformers>=4.35.0            [HuggingFace models]
+    ├── accelerate>=0.24.0              [Training acceleration]
+    └── bitsandbytes>=0.41.0            [Quantization]
+
+CATEGORY: Vision & Image Processing
+    ├── Pillow>=10.0.0                  [PIL - Image manipulation]
+    └── opencv-python>=4.8.0            [Computer vision]
+
+CATEGORY: Data Science
+    ├── numpy>=1.24.0                   [Numerical computing]
+    ├── pandas>=2.0.0                   [Data manipulation]
+    ├── scikit-learn>=1.3.0             [ML metrics]
+    ├── scipy>=1.11.0                   [Scientific computing]
+    └── scikit-image>=0.21.0            [Image metrics]
+
+CATEGORY: Dataset & API
+    ├── datasets>=2.14.0                [HuggingFace datasets]
+    ├── openai>=1.0.0                   [OpenAI API client]
+    └── google-generativeai>=0.3.0      [Google Gemini API]
+
+CATEGORY: Utilities
+    ├── tqdm>=4.66.0                    [Progress bars]
+    ├── PyYAML>=6.0                     [YAML parsing]
+    ├── python-dotenv>=1.0.0            [Environment variables]
+    └── matplotlib                      [Plotting (added)]
+
+
+================================================================================
+DATA FLOW
+================================================================================
+
+INPUT DATA:
+    ├── BLINK Dataset (HuggingFace)
+    │   └── Spatial Relation subset (143 samples)
+    │
+    ├── Environment Variables (.env)
+    │   ├── OPENAI_API_KEY
+    │   ├── GOOGLE_API_KEY
+    │   ├── HF_TOKEN
+    │   ├── NUM_SAMPLES
+    │   └── SKIP_SAMPLES
+    │
+    └── Configuration (config/config.yaml)
+        ├── Generation parameters
+        ├── FES/FCS sample counts
+        └── Model settings
+
+PROCESSING:
+    ├── LLaVA Model (GPU)
+    │   └── llava-hf/llava-v1.6-mistral-7b-hf
+    │
+    ├── OpenAI API (Text)
+    │   └── gpt-4o-mini
+    │
+    └── Local PIL (Images)
+        ├── FES: noise, blur, contrast, brightness
+        └── FCS: horizontal/vertical flips
+
+OUTPUT DATA:
+    └── output/api_run/
+        ├── api_evaluation_results.json [Metrics & predictions]
+        ├── api_evaluation_report.md    [Human-readable report]
+        ├── festa_*.log                 [Execution logs]
+        └── generated_samples/
+            ├── Original images (.png)
+            ├── FES text variants (.json)
+            ├── FCS text variants (.json)
+            ├── FES image variants (.png)
+            └── FCS image variants (.png)
+
+
+================================================================================
+FILE SIZE BREAKDOWN
+================================================================================
+
+Component              Size        File Count
+─────────────────────  ──────────  ──────────
+src/                   ~252 KB     6 files
+config/                ~12 KB      1 file
+paper/                 9.6 MB      1 file (PDF)
+output/api_run/        Variable    Runtime artifacts
+.venv/                 ~8 GB       Installed packages
+requirements.txt       ~1 KB       1 file
+.env/.env.example      ~1 KB       2 files
+
+TOTAL (excluding .venv): ~10 MB
+TOTAL (with .venv):      ~8 GB
+
+
+================================================================================
+EXECUTION REQUIREMENTS
+================================================================================
+
+HARDWARE:
+    ├── GPU: NVIDIA with 25GB VRAM (recommended)
+    │   └── CUDA support for PyTorch
+    ├── RAM: 16GB+ system memory
+    └── Disk: 20GB+ for models & cache
+
+SOFTWARE:
+    ├── Python 3.12+
+    ├── CUDA toolkit (for GPU)
+    └── Internet (for downloads)
+
+CREDENTIALS:
+    ├── OpenAI API key
+    ├── Google Cloud API key (Gemini)
+    └── HuggingFace token (optional)
+
+
+================================================================================
+MINIMAL RUNTIME FILES (11 essential files)
+================================================================================
+
+1. src/festa_with_apis.py          [Entry point]
+2. src/festa_evaluation.py         [Evaluation logic]
+3. src/complement_generator.py     [Generation logic]
+4. src/prompts_text.py             [Text prompts]
+5. src/prompts_image.py            [Image prompts]
+6. src/__init__.py                 [Package marker]
+7. config/config.yaml              [Configuration]
+8. requirements.txt                [Dependencies]
+9. .env.example                    [Env template]
+10. .env                           [API keys - user created]
+11. paper/2509.16648v1.pdf         [Reference paper]
+
+
+================================================================================
+LEGEND
+================================================================================
+
+──→   : Direct dependency / imports
+├──   : Has / contains
+└──   : End of branch
+[...]  : Description / type
+{}     : Optional
+<>     : External resource
+()     : Function / class name
+
+
+================================================================================
+Generated: October 26, 2025
+Last Updated: After slimdown and samples 4-5 execution
+Status: Production-ready minimal configuration
+================================================================================
+

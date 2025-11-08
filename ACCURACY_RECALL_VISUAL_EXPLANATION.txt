@@ -1,0 +1,267 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                 ACCURACY vs RECALL DISCREPANCY EXPLAINED                     ║
+║                      Why Accuracy = 0.6 but Recall = 0.95?                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ THE PROBLEM: Model Over-predicts Positive Class (Option "A")                │
+└──────────────────────────────────────────────────────────────────────────────┘
+ACTUAL DISTRIBUTION (Ground Truth):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Total: 588 samples
+  Positive (A): ████████████████████████████ 312 (53.1%)
+  Negative (B): ██████████████████████ 276 (46.9%)
+PREDICTED DISTRIBUTION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Total: 588 predictions
+  Predicts A: ████████████████████████████████████████████████████ 515 (87.6%) ⚠️
+  Predicts B: █████ 73 (12.4%)
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         CONFUSION MATRIX                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+                         PREDICTED
+                    A              B
+              ┏━━━━━━━━━━━┳━━━━━━━━━━━┓
+            A ┃    298    ┃    14     ┃  312
+   ACTUAL     ┃    ✓✓✓    ┃    ✗✗     ┃  (True Positives)
+              ┃    TP     ┃    FN     ┃
+              ┣━━━━━━━━━━━╋━━━━━━━━━━━┫
+            B ┃    217    ┃    59     ┃  276
+              ┃    ✗✗✗    ┃    ✓✓     ┃  (True Negatives)
+              ┃    FP     ┃    TN     ┃
+              ┗━━━━━━━━━━━┻━━━━━━━━━━━┛
+                 515         73         588
+Legend:
+  TP (True Positive)  = 298  ✓ Correctly predicted A
+  FP (False Positive) = 217  ✗ Wrongly predicted A (should be B)
+  TN (True Negative)  = 59   ✓ Correctly predicted B
+  FN (False Negative) = 14   ✗ Wrongly predicted B (should be A)
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         METRICS BREAKDOWN                                    │
+└──────────────────────────────────────────────────────────────────────────────┘
+1. ACCURACY = 60.71%
+   ═══════════════════════════════════════════════════════════════════════════
+   Formula: (TP + TN) / Total
+   Calculation: (298 + 59) / 588 = 357 / 588 = 0.6071
+   Visualization:
+   Total 588: ████████████████████████████████████████████████████████████
+   Correct:   ████████████████████████████████████ 357 (60.71%)
+   Wrong:     ████████████████████ 231 (39.29%)
+   What it means: The model is correct 6 out of 10 times overall.
+2. RECALL = 95.51%
+   ═══════════════════════════════════════════════════════════════════════════
+   Formula: TP / (TP + FN)
+   Calculation: 298 / (298 + 14) = 298 / 312 = 0.9551
+   Visualization (Of 312 actual positives):
+   Caught:  ██████████████████████████████████████████████████████ 298 (95.51%)
+   Missed:  ██ 14 (4.49%)
+   What it means: Of all actual "A" answers, the model catches 95.5% of them.
+   This is VERY HIGH - the model rarely misses a positive case!
+3. PRECISION = 57.86%
+   ═══════════════════════════════════════════════════════════════════════════
+   Formula: TP / (TP + FP)
+   Calculation: 298 / (298 + 217) = 298 / 515 = 0.5786
+   Visualization (Of 515 times model predicted A):
+   Correct: ██████████████████████████████ 298 (57.86%)
+   Wrong:   ███████████████████████ 217 (42.14%) ⚠️
+   What it means: When model says "A", it's WRONG 42% of the time!
+   LOW CONFIDENCE in positive predictions.
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                    WHY THE DISCREPANCY EXISTS                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+THE MODEL IS A "YES-SAYER" (Positive Class Bias)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Expected behavior:
+  Should predict A about 53% of the time (matching ground truth)
+Actual behavior:
+  Predicts A 87.6% of the time (64% more than it should!)
+IMPACT ON METRICS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ HIGH RECALL (95.51%)
+  ├─ Because model predicts A so often, it catches almost all actual As
+  ├─ Only 14 out of 312 actual positives are missed
+  └─ Good: Won't miss many positive cases
+✗ LOW ACCURACY (60.71%)
+  ├─ Over-prediction creates 217 false positives
+  ├─ These false alarms reduce overall correctness
+  └─ Problem: Many wrong predictions
+✗ LOW PRECISION (57.86%)
+  ├─ When model says A, it's wrong 42% of time
+  ├─ 217 false positives out of 515 A predictions
+  └─ Problem: Can't trust positive predictions
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         THE MATHEMATICAL STORY                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+Let's trace what happens to the 588 samples:
+START: 588 samples
+  ├─ 312 are actually A (positive)
+  └─ 276 are actually B (negative)
+MODEL PREDICTIONS:
+  ├─ Predicts A: 515 times (87.6%) ← TOO HIGH!
+  │   ├─ Correct (TP): 298
+  │   └─ Wrong (FP):   217 ← These hurt accuracy!
+  │
+  └─ Predicts B: 73 times (12.4%) ← TOO LOW!
+      ├─ Correct (TN): 59
+      └─ Wrong (FN):   14
+METRICS CALCULATION:
+  Accuracy  = Correct / Total
+            = (298 + 59) / 588
+            = 357 / 588
+            = 60.71%
+            [Affected by 217 FPs and 14 FNs]
+  Recall    = TP / (All actual positives)
+            = 298 / (298 + 14)
+            = 298 / 312
+            = 95.51%
+            [Only 14 FNs, so very high!]
+  Precision = TP / (All predicted positives)
+            = 298 / (298 + 217)
+            = 298 / 515
+            = 57.86%
+            [217 FPs drag this down]
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         REAL-WORLD ANALOGY                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+SMOKE DETECTOR ANALOGY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Imagine a smoke detector that's overly sensitive:
+  High Recall (95.51%):
+    ✓ Goes off for almost every actual fire
+    ✓ Rarely misses a real fire
+    ✓ GOOD for safety (don't want to miss fires!)
+  Low Precision (57.86%):
+    ✗ Also goes off for burnt toast, steam, candles
+    ✗ Many false alarms
+    ✗ BAD for user experience (can't trust it)
+  Low Accuracy (60.71%):
+    ✗ Overall, many alerts are false
+    ✗ Only right 60% of the time
+    ✗ Users might start ignoring it
+MEDICAL TEST ANALOGY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Like a disease screening test:
+  High Recall:
+    ✓ Catches 95% of sick patients
+    ✓ Good for initial screening
+    ✓ Won't miss many who need treatment
+  Low Precision:
+    ✗ Many healthy people flagged as sick
+    ✗ Requires many follow-up tests
+    ✗ Causes unnecessary anxiety
+  Trade-off:
+    → Better for screening (high recall)
+    → Bad for diagnosis (low precision)
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                    DETAILED ERROR ANALYSIS                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+ERROR BREAKDOWN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Total Errors: 231 (39.29% of all predictions)
+  False Positives (FP): 217 (93.9% of errors)
+    └─ Predicted A when answer is B
+    └─ This is the MAIN problem!
+  False Negatives (FN): 14 (6.1% of errors)
+    └─ Predicted B when answer is A
+    └─ Relatively rare
+ERROR RATE BY CLASS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  On Actual Positives (312 samples):
+    ├─ Correct: 298 (95.51%)
+    └─ Wrong:   14 (4.49%) ← Very low error rate
+  On Actual Negatives (276 samples):
+    ├─ Correct: 59 (21.38%) ← Very low!
+    └─ Wrong:   217 (78.62%) ← VERY HIGH error rate! ⚠️⚠️⚠️
+THE REAL PROBLEM:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  The model is EXCELLENT at identifying positives (95.5% correct)
+  BUT
+  The model is TERRIBLE at identifying negatives (only 21.4% correct)
+  It predicts "B" for only 73 out of 276 actual B cases!
+  That means it misclassifies 78.6% of all negative cases as positive!
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         PERFORMANCE SUMMARY                                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+┏━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Metric        ┃  Value   ┃  Assessment                                ┃
+┡━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Accuracy      │  60.71%  │  ⚠️  MODERATE - Too many false positives   │
+│ Precision     │  57.86%  │  ⚠️  LOW - Can't trust positive predictions│
+│ Recall        │  95.51%  │  ✓  EXCELLENT - Catches most positives     │
+│ F1-Score      │  72.07%  │  ⚠️  FAIR - Imbalanced P vs R              │
+│ Specificity*  │  21.38%  │  ✗  VERY LOW - Bad at identifying negatives│
+└───────────────┴──────────┴────────────────────────────────────────────┘
+* Specificity = TN / (TN + FP) = 59 / (59 + 217) = 21.38%
+GRADE CARD:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Identifying Positives:    A+  (95.51% recall)
+  Identifying Negatives:    F   (21.38% specificity)
+  Overall Correctness:      D+  (60.71% accuracy)
+  Prediction Confidence:    D   (57.86% precision)
+  OVERALL GRADE:            C-  (Highly imbalanced performance)
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         ROOT CAUSES                                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+Possible reasons for positive class bias:
+1. TRAINING DATA IMBALANCE
+   └─ Model may have seen more positive examples during training
+2. LOSS FUNCTION DESIGN
+   └─ May prioritize recall over precision (avoid missing positives)
+3. THRESHOLD MISCONFIGURATION
+   └─ Classification threshold too low (e.g., 0.3 instead of 0.5)
+4. MODEL UNCERTAINTY
+   └─ When uncertain, defaults to "yes/positive" response
+5. PROMPT ENGINEERING
+   └─ Prompt structure may encourage affirmative responses
+6. DATASET CHARACTERISTICS
+   └─ Simpler/clearer positive examples vs ambiguous negatives
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         RECOMMENDATIONS                                      │
+└──────────────────────────────────────────────────────────────────────────────┘
+IMMEDIATE ACTIONS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. ADJUST CLASSIFICATION THRESHOLD
+   Current: Likely 0.5 or lower
+   Recommendation: Try 0.6, 0.65, or 0.7
+   Effect: Reduce false positives, improve precision and accuracy
+   Trade-off: Slightly lower recall
+2. IMPLEMENT PROBABILITY CALIBRATION
+   Methods: Platt scaling, isotonic regression
+   Effect: Better align predicted probabilities with actual frequencies
+3. ANALYZE PREDICTION CONFIDENCE
+   Check: Are false positives associated with low confidence scores?
+   Action: Filter out low-confidence predictions
+LONG-TERM SOLUTIONS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. REBALANCE TRAINING DATA
+   Ensure equal representation of positive and negative examples
+2. MODIFY LOSS FUNCTION
+   Use weighted cross-entropy to penalize false positives more
+3. PROMPT ENGINEERING
+   Make prompts more neutral, avoid bias toward affirmative responses
+4. ENSEMBLE METHODS
+   Combine multiple models with different biases
+5. CONFIDENCE THRESHOLDING
+   Only make predictions when confidence is above threshold
+TARGET METRICS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Accuracy:   > 75%  (currently 60.71%)
+  Precision:  > 70%  (currently 57.86%)
+  Recall:     > 75%  (currently 95.51% - can afford to trade some)
+  F1-Score:   > 75%  (currently 72.07%)
+  Balance:    Precision and Recall within 10% of each other
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         KEY TAKEAWAYS                                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+1. THE DISCREPANCY IS EXPECTED given the positive class bias
+2. HIGH RECALL + LOW PRECISION = Over-prediction of positive class
+3. THE MODEL IS GOOD AT finding positives but BAD AT avoiding false positives
+4. THIS IS A CLASSIC precision-recall tradeoff scenario
+5. CURRENT TUNING favors recall at the expense of overall accuracy
+6. FOR FESTA SPATIAL REASONING, this suggests the model lacks confidence
+   and tends to default to "yes" when uncertain
+7. CALIBRATION AND THRESHOLD ADJUSTMENT are the most immediate solutions
+═══════════════════════════════════════════════════════════════════════════════
+Report Generated: November 7, 2025
+Based On: festa_report_20251031_075953.json
+Dataset: 143 samples, 588 FES TEXT perturbations
+═══════════════════════════════════════════════════════════════════════════════
