@@ -10,7 +10,6 @@ echo "Log: $LOG_FILE"
 # Update .env to ensure correct values
 cat > .env << 'EOF'
 
-
 # Number of samples to process
 NUM_SAMPLES=107
 SKIP_SAMPLES=36
